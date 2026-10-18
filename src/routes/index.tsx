@@ -1,9 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
+import { webSearch } from "@/lib/search.functions";
 
 type Search = { q?: string | undefined };
-type Result = { title: string; snippet: string; pageid: number };
 
 export const Route = createFileRoute("/")({
   validateSearch: (s: Record<string, unknown>): Search => ({
@@ -22,12 +22,6 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-async function search(q: string): Promise<{ total: number; results: Result[] }> {
-  const url = `https://en.wikipedia.org/w/api.php?action=query&list=search&format=json&origin=*&srlimit=20&srsearch=${encodeURIComponent(q)}`;
-  const r = await fetch(url);
-  const j = await r.json();
-  return { total: j.query?.searchinfo?.totalhits ?? 0, results: j.query?.search ?? [] };
-}
 
 function Logo({ big }: { big?: boolean }) {
   return (
@@ -72,7 +66,7 @@ function Index() {
 
   const { data, isFetching, isError } = useQuery({
     queryKey: ["search", q],
-    queryFn: () => search(q!),
+    queryFn: () => webSearch({ data: { q: q! } }),
     enabled: !!q,
   });
 
@@ -97,18 +91,19 @@ function Index() {
         {isError && <p className="text-destructive">Something went wrong. Try again.</p>}
         {data && !isFetching && (
           <>
-            <p className="mb-6 text-sm text-muted-foreground">About {data.total.toLocaleString()} results</p>
+            <p className="mb-6 text-sm text-muted-foreground">{data.results.length} results</p>
             {data.results.length === 0 && <p>No results for “{q}”.</p>}
             <ol className="space-y-7">
               {data.results.map((r) => {
-                const href = `https://en.wikipedia.org/?curid=${r.pageid}`;
+                let host = r.url;
+                try { host = new URL(r.url).hostname; } catch {}
                 return (
-                  <li key={r.pageid}>
-                    <p className="text-xs text-muted-foreground">en.wikipedia.org › {r.title}</p>
-                    <a href={href} target="_blank" rel="noreferrer" className="text-xl font-medium text-primary hover:underline">
+                  <li key={r.url}>
+                    <p className="text-xs text-muted-foreground">{host}</p>
+                    <a href={r.url} target="_blank" rel="noreferrer" className="text-xl font-medium text-primary hover:underline">
                       {r.title}
                     </a>
-                    <p className="result-snippet mt-1 text-sm leading-relaxed text-foreground/80" dangerouslySetInnerHTML={{ __html: r.snippet + "…" }} />
+                    <p className="mt-1 text-sm leading-relaxed text-foreground/80">{r.description}</p>
                   </li>
                 );
               })}
