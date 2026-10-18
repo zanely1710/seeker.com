@@ -9,8 +9,8 @@ export const webSearch = createServerFn({ method: "POST" })
     return { q };
   })
   .handler(async ({ data }): Promise<{ results: WebResult[] }> => {
-    const lk = process.env.LOVABLE_API_KEY;
-    const fk = process.env.FIRECRAWL_API_KEY;
+    const lk = process.env["LOVABLE_API_KEY"];
+    const fk = process.env["FIRECRAWL_API_KEY"];
     if (!lk || !fk) throw new Error("Search is not configured");
     const res = await fetch("https://connector-gateway.lovable.dev/firecrawl/v2/search", {
       method: "POST",
