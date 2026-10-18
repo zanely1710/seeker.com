@@ -12,11 +12,13 @@ export type WebResult = {
 const TABS: Tab[] = ["all", "images", "news", "shopping"];
 
 export const webSearch = createServerFn({ method: "POST" })
-  .inputValidator((d: { q: string; tab?: string }) => {
+  .inputValidator((d: { q: string; tab?: string; limit?: number; country?: string }) => {
     const q = String(d?.q ?? "").trim().slice(0, 300);
     if (!q) throw new Error("Empty query");
     const tab = (TABS.includes(d?.tab as Tab) ? d.tab : "all") as Tab;
-    return { q, tab };
+    const limit = Math.min(30, Math.max(5, Number(d?.limit) || 15));
+    const country = /^[A-Z]{2}$/.test(String(d?.country)) ? String(d.country) : undefined;
+    return { q, tab, limit, country };
   })
   .handler(async ({ data }): Promise<{ results: WebResult[] }> => {
     const lk = process.env["LOVABLE_API_KEY"];
@@ -33,7 +35,7 @@ export const webSearch = createServerFn({ method: "POST" })
         Authorization: `Bearer ${lk}`,
         "X-Connection-Api-Key": fk,
       },
-      body: JSON.stringify({ query, limit: data.tab === "images" ? 30 : 15, sources: [source] }),
+      body: JSON.stringify({ query, limit: data.tab === "images" ? 30 : data.limit, sources: [source], ...(data.country ? { country: data.country } : {}) }),
     });
     if (!res.ok) {
       const body = await res.text();

@@ -148,3 +148,13 @@
 
 @layer base { body { font-family: var(--font-sans); } }
 .result-snippet .searchmatch { font-weight: 700; color: var(--color-foreground); }
+
+.reader p { margin: 0 0 1rem; line-height: 1.75; }
+.reader h2 { font-size: 1.5rem; font-weight: 700; margin: 2rem 0 1rem; }
+.reader h3 { font-size: 1.2rem; font-weight: 700; margin: 1.5rem 0 .75rem; }
+.reader a { color: var(--color-primary); text-decoration: underline; }
+.reader ul { list-style: disc; padding-left: 1.5rem; margin-bottom: 1rem; }
+.reader ol { list-style: decimal; padding-left: 1.5rem; margin-bottom: 1rem; }
+.reader img { max-width: 100%; border-radius: .5rem; margin: 1rem 0; }
+.reader table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; }
+.reader td, .reader th { border: 1px solid var(--color-border); padding: .4rem; }
