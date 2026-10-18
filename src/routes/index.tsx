@@ -2,12 +2,12 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 
-type Search = { q?: string };
+type Search = { q?: string | undefined };
 type Result = { title: string; snippet: string; pageid: number };
 
 export const Route = createFileRoute("/")({
   validateSearch: (s: Record<string, unknown>): Search => ({
-    q: typeof s.q === "string" ? s.q : undefined,
+    q: typeof s["q"] === "string" ? s["q"] : undefined,
   }),
   head: () => ({
     meta: [
