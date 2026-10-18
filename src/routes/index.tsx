@@ -2,6 +2,8 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { webSearch, type Tab } from "@/lib/search.functions";
+import { useSettings, linkProps } from "@/lib/settings";
+import { SettingsButton } from "@/components/SettingsButton";
 
 type Search = { q?: string | undefined; tab?: Tab | undefined };
 const TABS: { id: Tab; label: string }[] = [
@@ -68,18 +70,20 @@ function SearchBox({ initial, onSubmit }: { initial: string; onSubmit: (q: strin
 
 function Index() {
   const { q, tab = "all" } = Route.useSearch();
+  const [settings] = useSettings();
   const navigate = useNavigate({ from: "/" });
   const go = (query: string) => navigate({ search: { q: query, tab } });
 
   const { data, isFetching, isError } = useQuery({
-    queryKey: ["search", q, tab],
-    queryFn: () => webSearch({ data: { q: q!, tab } }),
+    queryKey: ["search", q, tab, settings.results, settings.country],
+    queryFn: () => webSearch({ data: { q: q!, tab, limit: settings.results, country: settings.country } }),
     enabled: !!q,
   });
 
   if (!q) {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center gap-10 px-4">
+      <main className="relative flex min-h-screen flex-col items-center justify-center gap-10 px-4">
+        <div className="absolute right-4 top-4"><SettingsButton /></div>
         <Logo big />
         <div className="w-full max-w-2xl"><SearchBox initial="" onSubmit={go} /></div>
         <p className="text-sm text-muted-foreground">Private. No ads. No tracking.</p>
@@ -92,6 +96,7 @@ function Index() {
       <header className="sticky top-0 z-10 flex items-center gap-6 border-b border-border bg-background/90 px-6 py-4 backdrop-blur">
         <button onClick={() => navigate({ search: {} })}><Logo /></button>
         <div className="w-full max-w-2xl"><SearchBox initial={q} onSubmit={go} /></div>
+        <div className="ml-auto"><SettingsButton /></div>
       </header>
       <nav className="flex gap-6 border-b border-border px-6 md:pl-40">
         {TABS.map((t) => (
@@ -114,7 +119,7 @@ function Index() {
             {tab === "images" ? (
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
                 {data.results.map((r, i) => (
-                  <a key={i} href={r.url} target="_blank" rel="noreferrer" className="group block overflow-hidden rounded-lg border border-border bg-card">
+                  <a key={i} {...linkProps(r.url, settings)} className="group block overflow-hidden rounded-lg border border-border bg-card">
                     <img src={r.image ?? r.url} alt={r.title} loading="lazy" className="aspect-square w-full object-cover transition group-hover:scale-105" />
                     <p className="truncate p-2 text-xs text-muted-foreground">{r.title}</p>
                   </a>
@@ -123,7 +128,7 @@ function Index() {
             ) : tab === "shopping" ? (
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {data.results.map((r, i) => (
-                  <a key={i} href={r.url} target="_blank" rel="noreferrer" className="block rounded-lg border border-border bg-card p-4 transition hover:border-primary">
+                  <a key={i} {...linkProps(r.url, settings)} className="block rounded-lg border border-border bg-card p-4 transition hover:border-primary">
                     <p className="text-xs text-muted-foreground">{hostOf(r.url)}</p>
                     <p className="mt-1 font-semibold text-foreground">{r.title}</p>
                     <p className="mt-2 line-clamp-3 text-sm text-muted-foreground">{r.description}</p>
@@ -137,7 +142,7 @@ function Index() {
                   <li key={i} className="flex gap-4">
                     <div className="flex-1">
                       <p className="text-xs text-muted-foreground">{hostOf(r.url)}{r.date ? ` · ${r.date}` : ""}</p>
-                      <a href={r.url} target="_blank" rel="noreferrer" className="text-xl font-medium text-primary hover:underline">{r.title}</a>
+                      <a {...linkProps(r.url, settings)} className="text-xl font-medium text-primary hover:underline">{r.title}</a>
                       <p className="mt-1 text-sm leading-relaxed text-foreground/80">{r.description}</p>
                     </div>
                     {tab === "news" && r.image && <img src={r.image} alt="" loading="lazy" className="h-20 w-28 rounded-md object-cover" />}
