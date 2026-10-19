@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { webSearch, type Tab } from "@/lib/search.functions";
 import { useSettings, linkProps } from "@/lib/settings";
@@ -74,11 +74,15 @@ function Index() {
   const navigate = useNavigate({ from: "/" });
   const go = (query: string) => navigate({ search: { q: query, tab } });
 
-  const { data, isFetching, isError } = useQuery({
-    queryKey: ["search", q, tab, settings.results, settings.country],
-    queryFn: () => webSearch({ data: { q: q!, tab, limit: settings.results, country: settings.country } }),
-    enabled: !!q,
+  const qc = useQueryClient();
+  const opts = (t: Tab) => ({
+    queryKey: ["search", q, t, settings.results, settings.country],
+    queryFn: () => webSearch({ data: { q: q!, tab: t, limit: settings.results, country: settings.country } }),
+    staleTime: 10 * 60_000,
+    gcTime: 30 * 60_000,
   });
+  const { data, isFetching, isError } = useQuery({ ...opts(tab), enabled: !!q, refetchOnWindowFocus: false });
+  const prefetch = (t: Tab) => { if (q) qc.prefetchQuery(opts(t)); };
 
   if (!q) {
     return (
@@ -98,10 +102,11 @@ function Index() {
         <div className="w-full max-w-2xl"><SearchBox initial={q} onSubmit={go} /></div>
         <div className="ml-auto"><SettingsButton /></div>
       </header>
-      <nav className="flex gap-6 border-b border-border px-6 md:pl-40">
+      <nav className="flex gap-6 border-b border-border px-6">
         {TABS.map((t) => (
           <button
             key={t.id}
+            onMouseEnter={() => prefetch(t.id)}
             onClick={() => navigate({ search: { q, tab: t.id } })}
             className={`border-b-2 py-3 text-sm font-medium ${tab === t.id ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
           >
@@ -109,24 +114,30 @@ function Index() {
           </button>
         ))}
       </nav>
-      <section className="mx-auto max-w-5xl px-6 py-8 md:ml-40">
-        {isFetching && <p className="text-muted-foreground">Searching…</p>}
+      <section className="w-full px-6 py-6">
         {isError && <p className="text-destructive">Something went wrong. Try again.</p>}
-        {data && !isFetching && (
-          <>
-            <p className="mb-6 text-sm text-muted-foreground">{data.results.length} results</p>
+        {isFetching && !data && (
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {Array.from({ length: 9 }).map((_, i) => <div key={i} className="h-28 animate-pulse rounded-lg bg-muted" />)}
+          </div>
+        )}
+        {data && (
+          <div className={isFetching ? "opacity-60 transition-opacity" : "transition-opacity"}>
+            <p className="mb-4 text-sm text-muted-foreground">{data.results.length} results</p>
             {data.results.length === 0 && <p>No results for “{q}”.</p>}
             {tab === "images" ? (
-              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
                 {data.results.map((r, i) => (
-                  <a key={i} {...linkProps(r.url, settings)} className="group block overflow-hidden rounded-lg border border-border bg-card">
-                    <img src={r.image ?? r.url} alt={r.title} loading="lazy" className="aspect-square w-full object-cover transition group-hover:scale-105" />
-                    <p className="truncate p-2 text-xs text-muted-foreground">{r.title}</p>
+                  <a key={i} {...linkProps(r.url, settings)} className="group block overflow-hidden rounded-lg border border-border bg-muted">
+                    <img src={r.image ?? r.url} alt={r.title} loading={i < 12 ? "eager" : "lazy"} decoding="async" referrerPolicy="no-referrer"
+                      onError={(e) => { (e.currentTarget.parentElement as HTMLElement).style.display = "none"; }}
+                      className="aspect-square w-full object-cover transition group-hover:scale-105" />
+                    <p className="truncate bg-card p-2 text-xs text-muted-foreground">{r.title}</p>
                   </a>
                 ))}
               </div>
             ) : tab === "shopping" ? (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {data.results.map((r, i) => (
                   <a key={i} {...linkProps(r.url, settings)} className="block rounded-lg border border-border bg-card p-4 transition hover:border-primary">
                     <p className="text-xs text-muted-foreground">{hostOf(r.url)}</p>
@@ -137,20 +148,20 @@ function Index() {
                 ))}
               </div>
             ) : (
-              <ol className="max-w-3xl space-y-7">
+              <ol className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {data.results.map((r, i) => (
-                  <li key={i} className="flex gap-4">
-                    <div className="flex-1">
-                      <p className="text-xs text-muted-foreground">{hostOf(r.url)}{r.date ? ` · ${r.date}` : ""}</p>
-                      <a {...linkProps(r.url, settings)} className="text-xl font-medium text-primary hover:underline">{r.title}</a>
-                      <p className="mt-1 text-sm leading-relaxed text-foreground/80">{r.description}</p>
+                  <li key={i} className="flex gap-3 rounded-lg border border-border bg-card p-4">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-xs text-muted-foreground">{hostOf(r.url)}{r.date ? ` · ${r.date}` : ""}</p>
+                      <a {...linkProps(r.url, settings)} className="line-clamp-2 text-lg font-medium text-primary hover:underline">{r.title}</a>
+                      <p className="mt-1 line-clamp-3 text-sm leading-relaxed text-foreground/80">{r.description}</p>
                     </div>
-                    {tab === "news" && r.image && <img src={r.image} alt="" loading="lazy" className="h-20 w-28 rounded-md object-cover" />}
+                    {tab === "news" && r.image && <img src={r.image} alt="" loading="lazy" decoding="async" referrerPolicy="no-referrer" onError={(e) => { e.currentTarget.style.display = "none"; }} className="h-20 w-28 shrink-0 rounded-md object-cover" />}
                   </li>
                 ))}
               </ol>
             )}
-          </>
+          </div>
         )}
       </section>
     </main>
