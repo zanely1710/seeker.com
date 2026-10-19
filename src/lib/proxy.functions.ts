@@ -2,15 +2,14 @@ import { createServerFn } from "@tanstack/react-start";
 
 const AD_HOSTS = /(doubleclick|googlesyndication|googletagmanager|google-analytics|adservice|taboola|outbrain|facebook\.net|scorecardresearch|amazon-adsystem|criteo|hotjar|adnxs)/i;
 
+const CACHE = new Map<string, { t: number; v: { html: string; finalUrl: string } }>();
+
 function clean(html: string, base: string, origin: string) {
   let h = html
-    .replace(/<script\b[\s\S]*?<\/script>/gi, "")
-    .replace(/<script\b[^>]*\/?>/gi, "")
-    .replace(/<\/?noscript\b[^>]*>/gi, "")
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, (tag) => (AD_HOSTS.test(tag) ? "" : tag))
     .replace(/<(iframe|embed|object|frame)\b[\s\S]*?(<\/\1>|\/?>)/gi, "")
     .replace(/<link\b[^>]*rel=["']?(preload|prefetch|preconnect|dns-prefetch|modulepreload|manifest)[^>]*>/gi, "")
     .replace(/<meta\b[^>]*http-equiv=["']?refresh[^>]*>/gi, "")
-    .replace(/\son[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "")
     .replace(/<img\b[^>]*src=["'][^"']*["'][^>]*>/gi, (tag) => (AD_HOSTS.test(tag) ? "" : tag.replace(/<img\b/i, '<img loading="lazy" decoding="async"')));
 
   h = h.replace(/<a\b([^>]*?)\shref\s*=\s*("([^"]*)"|'([^']*)')([^>]*)>/gi, (m, pre, _q, d, s, post) => {
@@ -35,8 +34,10 @@ export const proxyPage = createServerFn({ method: "POST" })
     return { url: u.toString(), origin: o };
   })
   .handler(async ({ data }): Promise<{ html: string; finalUrl: string }> => {
+    const hit = CACHE.get(data.url);
+    if (hit && Date.now() - hit.t < 600_000) return hit.v;
     const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), 9000);
+    const t = setTimeout(() => ctrl.abort(), 6000);
     try {
       const res = await fetch(data.url, {
         signal: ctrl.signal,
@@ -53,7 +54,10 @@ export const proxyPage = createServerFn({ method: "POST" })
       if (!type.includes("html")) throw new Error("Not a web page");
       const text = (await res.text()).slice(0, 3_000_000);
       const finalUrl = res.url || data.url;
-      return { html: clean(text, finalUrl, data.origin), finalUrl };
+      const v = { html: clean(text, finalUrl, data.origin), finalUrl };
+      if (CACHE.size > 200) CACHE.clear();
+      CACHE.set(data.url, { t: Date.now(), v });
+      return v;
     } finally {
       clearTimeout(t);
     }
