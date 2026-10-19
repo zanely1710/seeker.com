@@ -1,15 +1,16 @@
 import { useEffect, useState } from "react";
 
+export type ViewMode = "private" | "live" | "reader";
 export type Settings = {
   openInside: boolean;
-  viewMode: "live" | "reader";
+  viewMode: ViewMode;
   results: number;
   country: string;
 };
 
 export const DEFAULT_SETTINGS: Settings = {
   openInside: true,
-  viewMode: "live",
+  viewMode: "private",
   results: 15,
   country: "",
 };
