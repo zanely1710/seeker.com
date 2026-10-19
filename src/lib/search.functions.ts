@@ -50,7 +50,7 @@ export const webSearch = createServerFn({ method: "POST" })
           url: r.url ?? r.imageUrl,
           title: r.title ?? r.url ?? "",
           description: r.description ?? r.snippet ?? "",
-          image: r.imageUrl ?? undefined,
+          image: r.thumbnailUrl ?? r.thumbnail ?? r.imageUrl ?? undefined,
           date: r.date ?? undefined,
         }))
         .filter((r) => r.url),
