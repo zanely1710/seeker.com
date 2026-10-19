@@ -69,7 +69,7 @@ function Viewer() {
 
       {mode === "private" ? (
         <div className="relative flex-1">
-          {priv.isFetching && <div className="absolute inset-x-0 top-0 h-1 animate-pulse bg-primary" />}
+          {priv.isFetching && !priv.data && <div className="absolute inset-x-0 top-0 h-1 animate-pulse bg-primary" />}
           {priv.isError && (
             <div className="p-8 text-center">
               <p className="text-destructive">This site blocked the private view.</p>
@@ -81,7 +81,7 @@ function Viewer() {
               srcDoc={priv.data.html}
               title="page"
               className="h-full w-full bg-card"
-              sandbox="allow-top-navigation-by-user-activation allow-popups"
+              sandbox="allow-scripts allow-forms allow-popups allow-top-navigation-by-user-activation"
             />
           )}
         </div>

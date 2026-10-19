@@ -83,6 +83,11 @@ function Index() {
     gcTime: 30 * 60_000,
   });
   const { data, isFetching, isError } = useQuery({ ...opts(tab), enabled: !!q, refetchOnWindowFocus: false });
+  useEffect(() => {
+    if (tab === "images" || !data) return;
+    data.results.slice(0, 4).forEach((r) => warm(r.url));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, tab]);
   const prefetch = (t: Tab) => { if (q) qc.prefetchQuery(opts(t)); };
   const warm = (url: string) => { if (settings.openInside && settings.viewMode === "private") qc.prefetchQuery(privateViewQuery(url, window.location.origin)); };
 
@@ -141,7 +146,7 @@ function Index() {
             ) : tab === "shopping" ? (
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {data.results.map((r, i) => (
-                  <a key={i} {...linkProps(r.url, settings)} onMouseEnter={() => warm(r.url)} className="block rounded-lg border border-border bg-card p-4 transition hover:border-primary">
+                  <a key={i} {...linkProps(r.url, settings)} onMouseEnter={() => warm(r.url)} onTouchStart={() => warm(r.url)} className="block rounded-lg border border-border bg-card p-4 transition hover:border-primary">
                     <p className="text-xs text-muted-foreground">{hostOf(r.url)}</p>
                     <p className="mt-1 font-semibold text-foreground">{r.title}</p>
                     <p className="mt-2 line-clamp-3 text-sm text-muted-foreground">{r.description}</p>
@@ -155,7 +160,7 @@ function Index() {
                   <li key={i} className="flex gap-3 rounded-lg border border-border bg-card p-4">
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-xs text-muted-foreground">{hostOf(r.url)}{r.date ? ` · ${r.date}` : ""}</p>
-                      <a {...linkProps(r.url, settings)} onMouseEnter={() => warm(r.url)} className="line-clamp-2 text-lg font-medium text-primary hover:underline">{r.title}</a>
+                      <a {...linkProps(r.url, settings)} onMouseEnter={() => warm(r.url)} onTouchStart={() => warm(r.url)} className="line-clamp-2 text-lg font-medium text-primary hover:underline">{r.title}</a>
                       <p className="mt-1 line-clamp-3 text-sm leading-relaxed text-foreground/80">{r.description}</p>
                     </div>
                     {tab === "news" && r.image && <img src={r.image} alt="" loading="lazy" decoding="async" referrerPolicy="no-referrer" onError={(e) => { e.currentTarget.style.display = "none"; }} className="h-20 w-28 shrink-0 rounded-md object-cover" />}
