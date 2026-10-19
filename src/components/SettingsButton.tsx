@@ -33,14 +33,14 @@ export function SettingsButton() {
           <div className="space-y-2 text-sm">
             <p>Page view</p>
             <div className="flex gap-2">
-              {(["live", "reader"] as const).map((m) => (
+              {(["private", "live", "reader"] as const).map((m) => (
                 <button key={m} onClick={() => update({ viewMode: m })}
-                  className={`flex-1 rounded-md border px-3 py-1.5 ${s.viewMode === m ? "border-primary bg-primary text-primary-foreground" : "border-border"}`}>
-                  {m === "live" ? "Live page" : "Reader"}
+                  className={`flex-1 rounded-md border px-2 py-1.5 ${s.viewMode === m ? "border-primary bg-primary text-primary-foreground" : "border-border"}`}>
+                  {m === "private" ? "Private" : m === "live" ? "Live" : "Reader"}
                 </button>
               ))}
             </div>
-            <p className="text-xs text-muted-foreground">Reader works on sites that refuse to open inside Seeker.</p>
+            <p className="text-xs text-muted-foreground">Private opens sites through Seeker with ads, trackers and scripts removed.</p>
           </div>
 
           <label className="block space-y-2 text-sm">
