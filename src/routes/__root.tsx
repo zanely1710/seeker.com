@@ -9,6 +9,7 @@ import {
   type ErrorComponentProps,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
+import { useSettings, applyAppearance } from "../lib/settings";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -95,6 +96,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Space+Grotesk:wght@500;700&display=swap" },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
     ],
+    scripts: [{ children: `try{var s=JSON.parse(localStorage.getItem("seeker-settings")||"{}");var t=s.theme||"system";if(t==="dark"||(t==="system"&&matchMedia("(prefers-color-scheme: dark)").matches))document.documentElement.classList.add("dark");if(s.textSize==="small")document.documentElement.style.fontSize="14px";if(s.textSize==="large")document.documentElement.style.fontSize="18px"}catch(e){}` }],
   }),
   shellComponent: RootShell,
   component: RootComponent,
@@ -104,7 +106,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
       </head>
@@ -118,6 +120,14 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const [settings] = useSettings();
+  useEffect(() => {
+    applyAppearance(settings);
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const f = () => applyAppearance(settings);
+    mq.addEventListener("change", f);
+    return () => mq.removeEventListener("change", f);
+  }, [settings]);
 
   return (
     <QueryClientProvider client={queryClient}>
