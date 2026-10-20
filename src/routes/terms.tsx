@@ -21,7 +21,7 @@ export const Route = createFileRoute("/terms")({
         ["4. Your data", "See Data & Privacy for how your information is handled. Your history and settings stay on your device."],
         ["5. No guarantees", "Seeker is provided as-is. We try to keep it fast and reliable but can't promise it will always be available or error-free."],
         ["6. Changes", "These terms may be updated. Continuing to use Seeker means you accept the latest version."],
-      ].map(([t, b]) => (
+      ].map(([t = "", b]) => (
         <Section key={t} title={t}><p className="text-sm leading-relaxed">{b}</p></Section>
       ))}
     </PageShell>
