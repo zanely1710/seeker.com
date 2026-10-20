@@ -1,8 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { webSearch, type Tab } from "@/lib/search.functions";
-import { useSettings, linkProps } from "@/lib/settings";
+import { useSettings, linkProps, addHistory } from "@/lib/settings";
+import { Link } from "@tanstack/react-router";
 import { privateViewQuery } from "@/lib/proxy.functions";
 import { SettingsButton } from "@/components/SettingsButton";
 
@@ -82,12 +83,13 @@ function Index() {
     staleTime: 10 * 60_000,
     gcTime: 30 * 60_000,
   });
-  const { data, isFetching, isError } = useQuery({ ...opts(tab), enabled: !!q, refetchOnWindowFocus: false });
+  const { data, isFetching, isError, isPlaceholderData } = useQuery({ ...opts(tab), enabled: !!q, refetchOnWindowFocus: false, placeholderData: keepPreviousData });
+  useEffect(() => { if (q) addHistory({ kind: "search", text: q }); }, [q]);
   useEffect(() => {
-    if (tab === "images" || !data) return;
+    if (tab === "images" || !data || isPlaceholderData || !settings.preload) return;
     data.results.slice(0, 4).forEach((r) => warm(r.url));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, tab]);
+  }, [data, tab, isPlaceholderData, settings.preload]);
   const prefetch = (t: Tab) => { if (q) qc.prefetchQuery(opts(t)); };
   const warm = (url: string) => { if (settings.openInside && settings.viewMode === "private") qc.prefetchQuery(privateViewQuery(url, window.location.origin)); };
 
@@ -98,6 +100,12 @@ function Index() {
         <Logo big />
         <div className="w-full max-w-2xl"><SearchBox initial="" onSubmit={go} /></div>
         <p className="text-sm text-muted-foreground">Private. No ads. No tracking.</p>
+        <footer className="absolute bottom-4 flex gap-5 text-xs text-muted-foreground">
+          <Link to="/history" className="hover:text-foreground">History</Link>
+          <Link to="/settings" className="hover:text-foreground">Settings</Link>
+          <Link to="/privacy" className="hover:text-foreground">Privacy</Link>
+          <Link to="/terms" className="hover:text-foreground">Terms</Link>
+        </footer>
       </main>
     );
   }
@@ -121,6 +129,7 @@ function Index() {
           </button>
         ))}
       </nav>
+      {isFetching && <div className="fixed inset-x-0 top-0 z-20 h-0.5 animate-pulse bg-primary" />}
       <section className="w-full px-6 py-6">
         {isError && <p className="text-destructive">Something went wrong. Try again.</p>}
         {isFetching && !data && (
@@ -129,7 +138,7 @@ function Index() {
           </div>
         )}
         {data && (
-          <div className={isFetching ? "opacity-60 transition-opacity" : "transition-opacity"}>
+          <div className={isPlaceholderData ? "opacity-50 transition-opacity" : "transition-opacity"}>
             <p className="mb-4 text-sm text-muted-foreground">{data.results.length} results</p>
             {data.results.length === 0 && <p>No results for “{q}”.</p>}
             {tab === "images" ? (

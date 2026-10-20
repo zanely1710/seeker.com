@@ -101,20 +101,20 @@
 }
 
 .dark {
-  --background: oklch(0.129 0.042 264.695);
-  --foreground: oklch(0.984 0.003 247.858);
-  --card: oklch(0.208 0.042 265.755);
-  --card-foreground: oklch(0.984 0.003 247.858);
-  --popover: oklch(0.208 0.042 265.755);
-  --popover-foreground: oklch(0.984 0.003 247.858);
-  --primary: oklch(0.929 0.013 255.508);
-  --primary-foreground: oklch(0.208 0.042 265.755);
-  --secondary: oklch(0.279 0.041 260.031);
-  --secondary-foreground: oklch(0.984 0.003 247.858);
-  --muted: oklch(0.279 0.041 260.031);
-  --muted-foreground: oklch(0.704 0.04 256.788);
-  --accent: oklch(0.279 0.041 260.031);
-  --accent-foreground: oklch(0.984 0.003 247.858);
+  --background: oklch(0.16 0.015 160);
+  --foreground: oklch(0.95 0.01 95);
+  --card: oklch(0.21 0.018 160);
+  --card-foreground: oklch(0.95 0.01 95);
+  --popover: oklch(0.21 0.018 160);
+  --popover-foreground: oklch(0.95 0.01 95);
+  --primary: oklch(0.72 0.14 160);
+  --primary-foreground: oklch(0.16 0.015 160);
+  --secondary: oklch(0.27 0.02 160);
+  --secondary-foreground: oklch(0.95 0.01 95);
+  --muted: oklch(0.27 0.02 160);
+  --muted-foreground: oklch(0.7 0.02 160);
+  --accent: oklch(0.75 0.16 55);
+  --accent-foreground: oklch(0.16 0.015 160);
   --destructive: oklch(0.704 0.191 22.216);
   --destructive-foreground: oklch(0.984 0.003 247.858);
   --border: oklch(1 0 0 / 10%);
@@ -158,3 +158,9 @@
 .reader img { max-width: 100%; border-radius: .5rem; margin: 1rem 0; }
 .reader table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; }
 .reader td, .reader th { border: 1px solid var(--color-border); padding: .4rem; }
+
+@layer base {
+  button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+  button { transition: transform 80ms ease, background-color 120ms ease, opacity 120ms ease; }
+  button:active { transform: scale(0.96); }
+}

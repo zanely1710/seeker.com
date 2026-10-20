@@ -5,7 +5,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { readPage } from "@/lib/scrape.functions";
 import { privateViewQuery } from "@/lib/proxy.functions";
-import { useSettings, type ViewMode } from "@/lib/settings";
+import { useSettings, addHistory, type ViewMode } from "@/lib/settings";
 import { SettingsButton } from "@/components/SettingsButton";
 
 export const Route = createFileRoute("/view")({
@@ -39,6 +39,7 @@ function Viewer() {
   const [origin, setOrigin] = useState("");
   useEffect(() => setMode(settings.viewMode), [settings.viewMode]);
   useEffect(() => setOrigin(window.location.origin), []);
+  useEffect(() => { if (url) addHistory({ kind: "page", text: url, url }); }, [url]);
 
   const priv = useQuery({ ...privateViewQuery(url, origin), enabled: mode === "private" && !!url && !!origin });
   const reader = useQuery({
