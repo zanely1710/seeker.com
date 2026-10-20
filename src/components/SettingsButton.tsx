@@ -1,61 +1,50 @@
-import { useState } from "react";
-import { useSettings, DEFAULT_SETTINGS } from "@/lib/settings";
-
-const COUNTRIES = [
-  ["", "Any region"], ["US", "United States"], ["PH", "Philippines"], ["GB", "United Kingdom"],
-  ["CN", "China"], ["JP", "Japan"], ["AU", "Australia"], ["CA", "Canada"], ["DE", "Germany"], ["FR", "France"],
-];
+import { useEffect, useRef, useState } from "react";
+import { Link } from "@tanstack/react-router";
+import { useSettings, type Theme } from "@/lib/settings";
 
 export function SettingsButton() {
   const [open, setOpen] = useState(false);
   const [s, update] = useSettings();
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: MouseEvent) => { if (!ref.current?.contains(e.target as Node)) setOpen(false); };
+    document.addEventListener("pointerdown", close);
+    return () => document.removeEventListener("pointerdown", close);
+  }, [open]);
+  const initial = (s.name.trim()[0] ?? "").toUpperCase();
+
   return (
-    <div className="relative">
-      <button
-        aria-label="Settings"
-        onClick={() => setOpen((o) => !o)}
-        className="rounded-full p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
-      >
-        <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-          <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
-          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" />
-        </svg>
+    <div className="relative" ref={ref}>
+      <button aria-label="Menu" onClick={() => setOpen((o) => !o)}
+        className="flex h-10 w-10 items-center justify-center rounded-full bg-primary font-display font-bold text-primary-foreground">
+        {initial || (
+          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></svg>
+        )}
       </button>
       {open && (
-        <div className="absolute right-0 top-12 z-30 w-80 space-y-5 rounded-xl border border-border bg-popover p-5 text-popover-foreground shadow-search">
-          <h3 className="font-display text-lg font-bold">Search settings</h3>
-
-          <label className="flex items-center justify-between gap-3 text-sm">
-            <span>Open websites inside Seeker</span>
+        <div className="absolute right-0 top-12 z-30 w-72 rounded-xl border border-border bg-popover p-3 text-popover-foreground shadow-search">
+          <p className="px-2 pb-2 text-sm font-semibold">{s.name ? `Hi, ${s.name}` : "Seeker"}</p>
+          <div className="mb-2 flex gap-1 rounded-lg bg-muted p-1 text-xs">
+            {(["light", "system", "dark"] as Theme[]).map((t) => (
+              <button key={t} onClick={() => update({ theme: t })}
+                className={`flex-1 rounded-md py-1.5 capitalize ${s.theme === t ? "bg-card font-semibold text-foreground shadow-sm" : "text-muted-foreground"}`}>{t}</button>
+            ))}
+          </div>
+          <label className="flex items-center justify-between rounded-md px-2 py-2 text-sm hover:bg-muted">
+            <span>Open sites inside Seeker</span>
             <input type="checkbox" checked={s.openInside} onChange={(e) => update({ openInside: e.target.checked })} className="h-4 w-4 accent-primary" />
           </label>
-
-          <div className="space-y-2 text-sm">
-            <p>Page view</p>
-            <div className="flex gap-2">
-              {(["private", "live", "reader"] as const).map((m) => (
-                <button key={m} onClick={() => update({ viewMode: m })}
-                  className={`flex-1 rounded-md border px-2 py-1.5 ${s.viewMode === m ? "border-primary bg-primary text-primary-foreground" : "border-border"}`}>
-                  {m === "private" ? "Private" : m === "live" ? "Live" : "Reader"}
-                </button>
-              ))}
-            </div>
-            <p className="text-xs text-muted-foreground">Private opens sites through Seeker with ads, trackers and scripts removed.</p>
-          </div>
-
-          <label className="block space-y-2 text-sm">
-            <span>Results per page: {s.results}</span>
-            <input type="range" min={5} max={30} step={5} value={s.results} onChange={(e) => update({ results: Number(e.target.value) })} className="w-full accent-primary" />
-          </label>
-
-          <label className="block space-y-2 text-sm">
-            <span>Region</span>
-            <select value={s.country} onChange={(e) => update({ country: e.target.value })} className="w-full rounded-md border border-input bg-background px-2 py-1.5">
-              {COUNTRIES.map(([c, n]) => <option key={c} value={c}>{n}</option>)}
-            </select>
-          </label>
-
-          <button onClick={() => update(DEFAULT_SETTINGS)} className="text-xs text-muted-foreground underline">Reset to defaults</button>
+          <nav className="mt-1 flex flex-col border-t border-border pt-1 text-sm">
+            {[
+              ["/settings", "All settings"],
+              ["/history", "History"],
+              ["/privacy", "Data & privacy"],
+              ["/terms", "Terms & conditions"],
+            ].map(([to, label]) => (
+              <Link key={to} to={to as "/settings"} onClick={() => setOpen(false)} className="rounded-md px-2 py-2 hover:bg-muted">{label}</Link>
+            ))}
+          </nav>
         </div>
       )}
     </div>
