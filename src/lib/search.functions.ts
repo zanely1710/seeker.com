@@ -40,7 +40,7 @@ export const webSearch = createServerFn({ method: "POST" })
     if (!res.ok) {
       const body = await res.text();
       console.error(`Search failed [${res.status}]: ${body}`);
-      throw new Error(`Search failed [${res.status}]`);
+      throw new Error(res.status === 402 ? "Out of credits" : `Search failed [${res.status}]`);
     }
     const j = await res.json();
     const raw: any[] = Array.isArray(j.data) ? j.data : (j.data?.[source] ?? []);
