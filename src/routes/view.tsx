@@ -40,6 +40,8 @@ function Viewer() {
   useEffect(() => setMode(settings.viewMode), [settings.viewMode]);
   useEffect(() => setOrigin(window.location.origin), []);
   useEffect(() => { if (url) addHistory({ kind: "page", text: url, url }); }, [url]);
+  // If the site blocks the private view, fall through to Reader automatically.
+  useEffect(() => { if (priv.isError && mode === "private") setMode("reader"); }, [priv.isError, mode]);
 
   const priv = useQuery({ ...privateViewQuery(url, origin), enabled: mode === "private" && !!url && !!origin });
   const reader = useQuery({
@@ -54,7 +56,7 @@ function Viewer() {
         <button onClick={() => router.history.back()} className="rounded-md px-2 py-1 text-sm hover:bg-muted">← Back</button>
         <Link to="/" className="font-display text-lg font-bold"><span className="text-primary">see</span>ker<span className="text-accent">.</span></Link>
         <div className="flex min-w-0 flex-1 items-center gap-2 truncate rounded-full bg-muted px-4 py-1.5 text-sm text-muted-foreground">
-          {mode === "private" && <span className="shrink-0 rounded-full bg-primary px-2 text-xs font-semibold text-primary-foreground">Protected</span>}
+          {mode === "private" && <span className="shrink-0 rounded-full bg-primary px-2 text-xs font-semibold text-primary-foreground">{priv.data?.engine === "reader" ? "Cleaned copy" : "Protected"}</span>}
           <span className="truncate">{url}</span>
         </div>
         <div className="flex overflow-hidden rounded-md border border-border text-sm">
