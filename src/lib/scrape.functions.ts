@@ -18,7 +18,7 @@ export const readPage = createServerFn({ method: "POST" })
     if (!res.ok) {
       const body = await res.text();
       console.error(`Scrape failed [${res.status}]: ${body}`);
-      throw new Error(`Could not load page [${res.status}]`);
+      throw new Error(res.status === 402 ? "Out of credits" : `Could not load page [${res.status}]`);
     }
     const j = await res.json();
     const d = j.data ?? j;

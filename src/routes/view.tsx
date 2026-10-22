@@ -97,7 +97,7 @@ function Viewer() {
         <main className="flex-1 overflow-auto">
           <article className="reader mx-auto max-w-3xl px-6 py-10">
             {reader.isFetching && <p className="text-muted-foreground">Loading page…</p>}
-            {reader.isError && <p className="text-destructive">This page couldn't be loaded. Try "Original".</p>}
+            {reader.isError && <p className="text-destructive">{(reader.error as Error)?.message === "Out of credits" ? "Out of credits — top up to keep reading pages inside Seeker." : "This page couldn't be loaded. Try \"Original\"."}</p>}
             {reader.data && !reader.isFetching && (
               <>
                 <h1 className="mb-6 font-display text-3xl font-bold">{reader.data.title}</h1>
