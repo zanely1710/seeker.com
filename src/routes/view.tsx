@@ -42,6 +42,8 @@ function Viewer() {
   useEffect(() => { if (url) addHistory({ kind: "page", text: url, url }); }, [url]);
 
   const priv = useQuery({ ...privateViewQuery(url, origin), enabled: mode === "private" && !!url && !!origin });
+  // If the site blocks the private view, fall through to Reader automatically.
+  useEffect(() => { if (priv.isError && mode === "private") setMode("reader"); }, [priv.isError, mode]);
   const reader = useQuery({
     queryKey: ["read", url],
     queryFn: () => readPage({ data: { url } }),
@@ -54,7 +56,7 @@ function Viewer() {
         <button onClick={() => router.history.back()} className="rounded-md px-2 py-1 text-sm hover:bg-muted">← Back</button>
         <Link to="/" className="font-display text-lg font-bold"><span className="text-primary">see</span>ker<span className="text-accent">.</span></Link>
         <div className="flex min-w-0 flex-1 items-center gap-2 truncate rounded-full bg-muted px-4 py-1.5 text-sm text-muted-foreground">
-          {mode === "private" && <span className="shrink-0 rounded-full bg-primary px-2 text-xs font-semibold text-primary-foreground">Protected</span>}
+          {mode === "private" && <span className="shrink-0 rounded-full bg-primary px-2 text-xs font-semibold text-primary-foreground">{priv.data?.engine === "reader" ? "Cleaned copy" : "Protected"}</span>}
           <span className="truncate">{url}</span>
         </div>
         <div className="flex overflow-hidden rounded-md border border-border text-sm">
@@ -73,7 +75,7 @@ function Viewer() {
           {priv.isFetching && !priv.data && <div className="absolute inset-x-0 top-0 h-1 animate-pulse bg-primary" />}
           {priv.isError && (
             <div className="p-8 text-center">
-              <p className="text-destructive">This site blocked the private view.</p>
+              <p className="text-destructive">{(priv.error as Error)?.message === "Out of credits" ? "Out of credits — top up to keep loading pages privately." : "This site blocked the private view."}</p>
               <button onClick={() => setMode("reader")} className="mt-3 rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground">Try Reader</button>
             </div>
           )}
@@ -95,7 +97,7 @@ function Viewer() {
         <main className="flex-1 overflow-auto">
           <article className="reader mx-auto max-w-3xl px-6 py-10">
             {reader.isFetching && <p className="text-muted-foreground">Loading page…</p>}
-            {reader.isError && <p className="text-destructive">This page couldn't be loaded. Try "Original".</p>}
+            {reader.isError && <p className="text-destructive">{(reader.error as Error)?.message === "Out of credits" ? "Out of credits — top up to keep reading pages inside Seeker." : "This page couldn't be loaded. Try \"Original\"."}</p>}
             {reader.data && !reader.isFetching && (
               <>
                 <h1 className="mb-6 font-display text-3xl font-bold">{reader.data.title}</h1>

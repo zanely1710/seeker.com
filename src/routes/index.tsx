@@ -83,7 +83,7 @@ function Index() {
     staleTime: 10 * 60_000,
     gcTime: 30 * 60_000,
   });
-  const { data, isFetching, isError, isPlaceholderData } = useQuery({ ...opts(tab), enabled: !!q, refetchOnWindowFocus: false, placeholderData: keepPreviousData });
+  const { data, isFetching, isError, isPlaceholderData, error } = useQuery({ ...opts(tab), enabled: !!q, refetchOnWindowFocus: false, placeholderData: keepPreviousData });
   useEffect(() => { if (q) addHistory({ kind: "search", text: q }); }, [q]);
   useEffect(() => {
     if (tab === "images" || !data || isPlaceholderData || !settings.preload) return;
@@ -131,7 +131,7 @@ function Index() {
       </nav>
       {isFetching && <div className="fixed inset-x-0 top-0 z-20 h-0.5 animate-pulse bg-primary" />}
       <section className="w-full px-6 py-6">
-        {isError && <p className="text-destructive">Something went wrong. Try again.</p>}
+        {isError && <p className="text-destructive">{(error as Error)?.message === "Out of credits" ? "Out of credits — top up to keep searching." : "Something went wrong. Try again."}</p>}
         {isFetching && !data && (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
             {Array.from({ length: 9 }).map((_, i) => <div key={i} className="h-28 animate-pulse rounded-lg bg-muted" />)}
