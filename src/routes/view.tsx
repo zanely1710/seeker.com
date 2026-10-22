@@ -40,10 +40,10 @@ function Viewer() {
   useEffect(() => setMode(settings.viewMode), [settings.viewMode]);
   useEffect(() => setOrigin(window.location.origin), []);
   useEffect(() => { if (url) addHistory({ kind: "page", text: url, url }); }, [url]);
-  // If the site blocks the private view, fall through to Reader automatically.
-  useEffect(() => { if (priv.isError && mode === "private") setMode("reader"); }, [priv.isError, mode]);
 
   const priv = useQuery({ ...privateViewQuery(url, origin), enabled: mode === "private" && !!url && !!origin });
+  // If the site blocks the private view, fall through to Reader automatically.
+  useEffect(() => { if (priv.isError && mode === "private") setMode("reader"); }, [priv.isError, mode]);
   const reader = useQuery({
     queryKey: ["read", url],
     queryFn: () => readPage({ data: { url } }),
