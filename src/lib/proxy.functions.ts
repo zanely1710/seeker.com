@@ -58,7 +58,7 @@ function clean(html: string, base: string, origin: string) {
 
 // Fallback engine: a real browser renders the page, so bot-protected and
 // JavaScript-only sites come through where a plain fetch gets a blank shell.
-async function renderViaReader(url: string): Promise<{ html: string; title?: string } | null> {
+async function renderViaReader(url: string): Promise<{ html: string; title?: string; outOfCredits?: boolean } | null> {
   const lk = process.env["LOVABLE_API_KEY"];
   const fk = process.env["FIRECRAWL_API_KEY"];
   if (!lk || !fk) return null;
@@ -74,6 +74,7 @@ async function renderViaReader(url: string): Promise<{ html: string; title?: str
     if (!res.ok) {
       const body = await res.text();
       console.error(`Reader engine failed [${res.status}]: ${body.slice(0, 500)}`);
+      if (res.status === 402) return { html: "", outOfCredits: true };
       return null;
     }
     const j = await res.json();
@@ -138,6 +139,7 @@ export const proxyPage = createServerFn({ method: "POST" })
 
     // 2) Fallback: rendered copy through the reader engine (handles blocks + JS-only pages).
     const rendered = await renderViaReader(data.url);
+    if (rendered?.outOfCredits) throw new Error("Out of credits");
     if (rendered && usable(rendered.html)) {
       const v = { html: clean(rendered.html, data.url, data.origin), finalUrl: data.url, engine: "reader" as const };
       if (CACHE.size > 200) CACHE.clear();

@@ -75,7 +75,7 @@ function Viewer() {
           {priv.isFetching && !priv.data && <div className="absolute inset-x-0 top-0 h-1 animate-pulse bg-primary" />}
           {priv.isError && (
             <div className="p-8 text-center">
-              <p className="text-destructive">This site blocked the private view.</p>
+              <p className="text-destructive">{(priv.error as Error)?.message === "Out of credits" ? "Out of credits — top up to keep loading pages privately." : "This site blocked the private view."}</p>
               <button onClick={() => setMode("reader")} className="mt-3 rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground">Try Reader</button>
             </div>
           )}
